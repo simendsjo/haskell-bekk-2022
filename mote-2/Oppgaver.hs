@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 import qualified Data.List (sort)
 
 -- Parametric polymorphishm
@@ -5,10 +6,10 @@ import qualified Data.List (sort)
 --Implementer funksjonene utifra typene :
 
 constant :: a -> b -> a
-constant = undefined
+constant a _ = a
 
 f :: (a -> b -> c) -> (a -> b) -> a -> c
-f = undefined
+f abc ab a = abc a (ab a)
 
 
 -- Type classes
@@ -22,12 +23,36 @@ f = undefined
 
 data Sjanger = Jazz | Rock | Pop | Klassisk deriving Show 
 
+instance Eq Sjanger where
+  (==) Jazz Jazz = True
+  (==) Rock Rock = True
+  (==) Pop Pop = True
+  (==) _ _ = False
+
+instance Ord Sjanger where
+  (<=) Jazz _ = True
+  (<=) _ Jazz = False
+  (<=) Rock _ = True
+  (<=) _ Rock = False
+  (<=) Pop _ = True
+  (<=) _ Pop = False
+  (<=) Klassisk _ = True
+
 data NumberedVal a = NumberedVal Int a deriving Show
+
+instance Eq a => Eq (NumberedVal a) where
+  (==) (NumberedVal i x) (NumberedVal j y) = i == j && x == y
 
 -- Kan skippe Ord for Tree, for mye jobb
 data Tree a b = Empty | NodeA a | NodeB b | Nodes (Tree a b) (Tree a b) 
     deriving Show
 
+instance (Eq a, Eq b) => Eq (Tree a b) where
+  (==) Empty Empty = True
+  (==) (NodeA x) (NodeA y) = x == y
+  (==) (NodeB x) (NodeB y) = x == y
+  (==) (Nodes x1 y1) (Nodes x2 y2) = x1 == x2 && y1 == y2
+  (==) _ _ = False
 
 
 -- 2
@@ -35,7 +60,10 @@ data Tree a b = Empty | NodeA a | NodeB b | Nodes (Tree a b) (Tree a b)
 
 -- Implementer en funksjon som gir indexen elementet finnes, eller Nothing hvis det ikke finnes.
 findIndex :: Eq a => a -> [a] -> Maybe Int
-findIndex = undefined
+findIndex _ []  = Nothing
+findIndex n xs  = go 0 xs
+    where go i (x:xs) = if x == n then Just i else go (i+1) xs
+
 
 -- 3
 
@@ -43,7 +71,12 @@ findIndex = undefined
 -- Hva skal funksjonen ha som type?
 -- Hva er den mest generelle typen?
 
-findMax = undefined
+findMax :: Ord a => [a] -> Maybe a
+findMax [] = Nothing
+findMax (x:xs) = go x xs
+    where
+      go m [] = Just m
+      go m (x:xs) = go (max m x) xs
 
 -- 4
 -- Egen type class
@@ -56,9 +89,19 @@ findMax = undefined
 
 
 class Sortable a where
-    sort :: a --ikke riktig type, endre den til noe som gir mening 
+    sort :: a -> a
 
+instance Sortable [Char] where
+  sort x = Data.List.sort x
 
+instance Sortable [Int] where
+  sort x = Data.List.sort x
+
+instance Sortable (Int, Int) where
+  sort t@(x, y) = if x <= y then t else (y, x)
+
+instance Sortable (Char, Char, Char) where
+  sort (x, y, z) = let [x', y', z'] = Data.List.sort [x, y, z] in (x', y', z')
 
 -- Implementer for
 -- String
@@ -72,6 +115,8 @@ class Sortable a where
 -- 5
 -- Gjør instancene mer generelle ved å bruke contexts
 
+instance Ord a => Sortable [a] where
+  sort xs = Data.List.sort xs
 
 -- 6
 -- Legg til en funksjon : sortReverse

@@ -62,7 +62,9 @@ instance (Eq a, Eq b) => Eq (Tree a b) where
 findIndex :: Eq a => a -> [a] -> Maybe Int
 findIndex _ []  = Nothing
 findIndex n xs  = go 0 xs
-    where go i (x:xs) = if x == n then Just i else go (i+1) xs
+    where
+      go i [] = Just i
+      go i (x:xs) = if x == n then Just i else go (i+1) xs
 
 
 -- 3

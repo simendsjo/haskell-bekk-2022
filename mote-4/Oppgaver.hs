@@ -18,7 +18,8 @@ instance MyFunctor [] where
 -- Just 2
 instance MyFunctor Maybe where
     fmap :: (a -> b) -> Maybe a -> Maybe b
-    fmap = error "todo"
+    fmap _ Nothing = Nothing
+    fmap f (Just x) = Just (f x)
 
 -- | OPPGAVE : implementer MyFunctor (Either e)
 -- >>> fmap (+1) (Right 1)
@@ -27,7 +28,8 @@ instance MyFunctor Maybe where
 -- Left 1
 instance MyFunctor (Either e) where
     fmap :: (a -> b) -> Either e a -> Either e b
-    fmap = error "todo"
+    fmap _ (Left a) = Left a
+    fmap f (Right a) = Right (f a)
 
 data OneOrTwo a = One a | Two a a
     deriving (Show)
@@ -37,6 +39,11 @@ data OneOrTwo a = One a | Two a a
 -- Two 2 3
 -- >>> fmap id (One 1)
 -- One 1
+instance MyFunctor OneOrTwo where
+  fmap :: (a -> b) -> OneOrTwo a -> OneOrTwo b
+  fmap f (One a) = One (f a)
+  fmap f (Two x y) = Two (f x) (f y)
+
 data RemoteData e a
     = NotAsked
     | Loading
@@ -49,6 +56,12 @@ data RemoteData e a
 -- Success "CBA"
 -- >>> fmap reverse NotAsked
 -- NotAsked
+instance MyFunctor (RemoteData e) where
+  fmap :: (a -> b) -> RemoteData e a -> RemoteData e b
+  fmap f (Success a) = Success (f a)
+  fmap _ (Failure e) = Failure e
+  fmap _ NotAsked = NotAsked
+  fmap _ Loading = Loading
 
 -- | OPPGAVE : bruk det du har lært om functors til å gjøre om dataStuff til det som står i testen.
 -- det finnes allerede even :: Int -> Bool
@@ -63,4 +76,4 @@ dataStuff =
     ]
 
 dataStuffIsEven :: [RemoteData String Bool]
-dataStuffIsEven = error "todo"
+dataStuffIsEven = fmap (fmap even) dataStuff

@@ -22,8 +22,14 @@ class ListLike f where
     toList :: f a -> [a]
 
 -- Prøv å lag instanser for:
--- Maybe
+instance ListLike Maybe where
+  toList (Just x) = [x]
+  toList _ = []
+
 data Identity a = Identity a
+
+instance ListLike Identity where
+  toList (Identity x) = [x]
 
 -- (,) a
 -- Either a
@@ -31,6 +37,16 @@ data Identity a = Identity a
 data Const a b = Const a
 
 -- Lag en class for typer sånn at vi kan swappe typeparameterene
+
+class Swap f where
+  swap :: f a b -> f b a
+
+instance Swap Either where
+  swap (Left x) = Right x
+  swap (Right x) = Left x
+
+instance Swap (,) where
+  swap (a, b) = (b, a)
 
 ex1 :: Either Int String
 ex1 = Right "hei"
@@ -49,6 +65,18 @@ ex2 = ([1, 2, 3], Just True)
 
 -- Lag foldable instance for
 data Tree a = Empty | Bin (Tree a) a (Tree a) deriving (Foldable)
+instance Monoid Tree where
+  mempty = Empty
+  mappend a Empty = a
+  mappend Empty b = b
+  mappend (Bin al av ar) (Bin bl bv br) =
+    Bin (al<>bl) (av<>bv) (ar<>br)
+
+instance Foldable Tree where
+  -- foldMap :: Monoid m => (a -> m) -> t a -> m
+  foldMap lift Empty = Empty
+  foldMap lift (Bin l a r) =
+  -- foldr :: (a -> b -> b) -> b -> t a -> b
 
 exTree = Bin (Bin Empty 1 Empty) 2 (Bin (Bin Empty 3 (Bin Empty 4 Empty)) 5 Empty)
 

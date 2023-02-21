@@ -32,12 +32,12 @@ setValue (MyString _) x = MyString x
 -- Exp
 
 data GExp a where
-    Var :: String -> GExp Int
-    Lit :: Int -> GExp Int
-    BoolLit :: Bool -> GExp Bool
-    BoolVar :: String -> GExp Bool
-    Add :: GExp Int -> GExp Int -> GExp Int
-    If :: GExp Bool -> GExp Int -> GExp Int -> GExp Int
+    Var     :: String    -> GExp Int
+    Lit     :: Int       -> GExp Int
+    BoolLit :: Bool      -> GExp Bool
+    BoolVar :: String    -> GExp Bool
+    Add     :: GExp Int  -> GExp Int -> GExp Int
+    If      :: GExp Bool -> GExp Int -> GExp Int -> GExp Int
 
 deriving instance Show a => Show (GExp a)
 

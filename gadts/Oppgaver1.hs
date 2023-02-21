@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
 -- skriv om disse datatypene til GADT syntax
@@ -38,6 +39,8 @@ data GExp a where
     Add :: GExp Int -> GExp Int -> GExp Int
     If :: GExp Bool -> GExp Int -> GExp Int -> GExp Int
 
+deriving instance Show a => Show (GExp a)
+
 -- skriv en eval-funksjon for GExp
 eval :: (String -> Int) -> (String -> Bool) -> GExp a -> a
 eval i b (Var x)      = i x
@@ -54,15 +57,18 @@ eval i b (If p t f)   = if (eval i b p) then (eval i b t) else (eval i b f)
 -- Add (Lit a) (Lit b) -> Lit (a+b)
 -- husk å optimize alle sub-exps
 optimize :: GExp a -> GExp a
-optimize x@(Var _) = x
-optimize x@(Lit _) = x
-optimize x@(BoolVar _) = x
-optimize x@(BoolLit _) = x
-optimize (If (BoolLit True) t _) = optimize t
-optimize (If (BoolLit False) _ f) = optimize f
-optimize x@(If _ _ _) = x
-optimize (Add (Lit a) (Lit b)) = Lit (a + b)
-optimize x@(Add _ _) = x
+-- optimizing expressions
+optimize (If (BoolLit True) t _)   = optimize t
+optimize (If (BoolLit False) _ f)  = optimize f
+optimize (Add (Lit a) (Lit b))     = Lit (a + b)
+-- Unable to optimize
+optimize x@(Var _)                 = x
+optimize x@(Lit _)                 = x
+optimize x@(BoolVar _)             = x
+optimize x@(BoolLit _)             = x
+-- unoptimized match-all expressions
+optimize (If p t f)                = If (optimize p) (optimize t) (optimize f)
+optimize (Add a b)                 = Add (optimize a) (optimize b)
 
 
 -- hvordan garantere at det at alle nodene er optimized? sånn ish

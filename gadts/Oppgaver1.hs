@@ -4,9 +4,13 @@
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
 -- skriv om disse datatypene til GADT syntax
-data Result e a = Err e | Ok a
+data Result e a where
+  Err :: e -> Result e a
+  Ok :: a -> Result e a
 
-data Info a = Good {id :: Int, info :: a} | Bad {id :: Int, info :: a, errorMsg :: String}
+data Info a where
+  Good :: {id :: Int, info :: a} -> Info a
+  Bad :: {id :: Int, info :: a, errorMsg :: String} -> Info a
 
 --
 data IntOrString a where
@@ -15,13 +19,14 @@ data IntOrString a where
 
 -- implementer funksjonene
 incNumber :: IntOrString Int -> IntOrString Int
-incNumber = undefined
+incNumber (MyInt i) = MyInt (i+1)
 
 reverseString :: IntOrString String -> IntOrString String
-reverseString = undefined
+reverseString (MyString s)= MyString (reverse s)
 
 setValue :: IntOrString a -> a -> IntOrString a
-setValue = undefined
+setValue (MyInt _) x = MyInt x
+setValue (MyString _) x = MyString x
 
 -- Exp
 
@@ -35,7 +40,12 @@ data GExp a where
 
 -- skriv en eval-funksjon for GExp
 eval :: (String -> Int) -> (String -> Bool) -> GExp a -> a
-eval getIntVarValue getBoolVarValue = undefined
+eval i b (Var x)      = i x
+eval i b (Lit x)      = x
+eval i b (BoolLit x)  = x
+eval i b (BoolVar x)  = b x
+eval i b (Add x y)    = (eval i b x) + (eval i b y)
+eval i b (If p t f)   = if (eval i b p) then (eval i b t) else (eval i b f)
 
 -- skrive en optimize funksjon for GEXp
 -- optimaliseringer:
@@ -44,6 +54,15 @@ eval getIntVarValue getBoolVarValue = undefined
 -- Add (Lit a) (Lit b) -> Lit (a+b)
 -- husk å optimize alle sub-exps
 optimize :: GExp a -> GExp a
-optimize = undefined
+optimize x@(Var _) = x
+optimize x@(Lit _) = x
+optimize x@(BoolVar _) = x
+optimize x@(BoolLit _) = x
+optimize (If (BoolLit True) t _) = optimize t
+optimize (If (BoolLit False) _ f) = optimize f
+optimize x@(If _ _ _) = x
+optimize (Add (Lit a) (Lit b)) = Lit (a + b)
+optimize x@(Add _ _) = x
+
 
 -- hvordan garantere at det at alle nodene er optimized? sånn ish
